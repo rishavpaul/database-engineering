@@ -1,3 +1,5 @@
+## Transaction
+
 A database transaction is a sequence of one or more SQL operations executed as a single unit of work. These operations can include `INSERT`, `UPDATE`, `DELETE`, and `SELECT` statements. The key characteristic of a transaction is that it ensures the ACID properties, which stand for Atomicity, Consistency, Isolation, and Durability. These properties help maintain the integrity and reliability of the database.
 
 ### ACID Properties
@@ -64,3 +66,46 @@ ROLLBACK;
 - `ROLLBACK;`: If an error occurs, the transaction is rolled back, and no changes are applied to the database.
 
 In this example, the transaction ensures that either both account balances are updated, or neither is, preserving the consistency and integrity of the database.
+
+### What is Atomicity?
+
+Atomicity is one of the four ACID properties of database transactions, which ensure that database operations are processed reliably. Atomicity specifically guarantees that a series of database operations within a transaction are treated as a single "atomic" unit. This means that either all operations within the transaction are completed successfully, or none of them are applied to the database. There are no partial transactions.
+
+In essence, atomicity ensures the "all-or-nothing" principle:
+
+- **All Operations Complete Successfully**: If every operation in the transaction is executed without error, the transaction is committed, and all changes are permanently applied to the database.
+- **Any Operation Fails**: If any operation within the transaction fails, the entire transaction is rolled back, and the database is restored to the state it was in before the transaction began.
+
+### What Happens When a SQL Server Crashes in the Middle of a Transaction?
+
+When a SQL server crashes in the middle of a transaction, atomicity ensures that the transaction is handled in a way that maintains the integrity of the database. Here’s what typically happens:
+
+1. **Incomplete Transactions Are Rolled Back**: Upon recovery, the SQL server will identify any transactions that were incomplete at the time of the crash. These transactions will be rolled back, meaning any partial changes made by the transaction will be undone.
+
+2. **Transaction Log**: SQL servers use transaction logs to keep track of all operations performed by transactions. The transaction log records every operation so that in the event of a crash, the server can determine the state of each transaction (whether it was committed or not).
+
+3. **Recovery Process**:
+   - **Redo Phase**: The server will redo any committed transactions that were not fully written to the database before the crash. This ensures that all committed changes are applied.
+   - **Undo Phase**: The server will undo any transactions that were not committed before the crash. This removes any partial changes, maintaining the atomicity and consistency of the database.
+
+### Example Scenario
+
+Consider a transaction that transfers money from Account A to Account B:
+
+```sql
+BEGIN TRANSACTION;
+
+UPDATE accounts SET balance = balance - 100 WHERE account_id = 1;
+UPDATE accounts SET balance = balance + 100 WHERE account_id = 2;
+
+COMMIT;
+```
+
+If the server crashes after the first `UPDATE` but before the `COMMIT`, the database could be in an inconsistent state. However, due to atomicity and the use of transaction logs:
+
+1. Upon restarting, the SQL server checks the transaction log.
+2. The server detects that the transaction was not committed.
+3. The server rolls back the `UPDATE` to Account A, restoring its balance to the original state.
+4. The server ensures no partial updates remain, maintaining database integrity.
+
+In summary, atomicity ensures that even in the event of a crash, the database can recover to a consistent state by rolling back any incomplete transactions. This guarantees that no partial transactions are left in the database, preserving the all-or-nothing nature of transactions.
