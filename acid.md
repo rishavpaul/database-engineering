@@ -120,10 +120,15 @@ In summary, atomicity ensures that even in the event of a crash, the database ca
 
 ```sql
 -- Transaction 1
-BEGIN;
+START TRANSACTION;
 UPDATE accounts SET balance = balance - 100 WHERE account_id = 1;
+
 -- Transaction 2
+SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
+START TRANSACTION;
 SELECT balance FROM accounts WHERE account_id = 1; -- Dirty Read
+COMMIT;
+
 -- Transaction 1
 ROLLBACK;
 ```
@@ -133,7 +138,7 @@ In this example, Transaction 2 reads the balance that Transaction 1 has updated 
 **Prevention:** Set the isolation level to `READ COMMITTED`.
 
 ```sql
-SET TRANSACTION ISOLATION LEVEL READ COMMITTED;
+SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED;
 ```
 
 #### 2. Non-repeatable Read
@@ -143,12 +148,15 @@ SET TRANSACTION ISOLATION LEVEL READ COMMITTED;
 
 ```sql
 -- Transaction 1
-BEGIN;
+SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED;
+START TRANSACTION;
 SELECT balance FROM accounts WHERE account_id = 1; -- Read 1
+
 -- Transaction 2
-BEGIN;
+START TRANSACTION;
 UPDATE accounts SET balance = balance + 100 WHERE account_id = 1;
 COMMIT;
+
 -- Transaction 1
 SELECT balance FROM accounts WHERE account_id = 1; -- Read 2
 COMMIT;
@@ -159,7 +167,7 @@ In this example, Transaction 1 reads the balance twice, but between the two read
 **Prevention:** Set the isolation level to `REPEATABLE READ`.
 
 ```sql
-SET TRANSACTION ISOLATION LEVEL REPEATABLE READ;
+SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
 ```
 
 #### 3. Phantom Reads
@@ -169,12 +177,15 @@ SET TRANSACTION ISOLATION LEVEL REPEATABLE READ;
 
 ```sql
 -- Transaction 1
-BEGIN;
+SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
+START TRANSACTION;
 SELECT COUNT(*) FROM accounts WHERE balance > 1000; -- Read 1
+
 -- Transaction 2
-BEGIN;
+START TRANSACTION;
 INSERT INTO accounts (account_id, balance) VALUES (5, 1500);
 COMMIT;
+
 -- Transaction 1
 SELECT COUNT(*) FROM accounts WHERE balance > 1000; -- Read 2
 COMMIT;
@@ -185,7 +196,7 @@ In this example, Transaction 1 reads the count of accounts with a balance greate
 **Prevention:** Set the isolation level to `SERIALIZABLE`.
 
 ```sql
-SET TRANSACTION ISOLATION LEVEL SERIALIZABLE;
+SET SESSION TRANSACTION ISOLATION LEVEL SERIALIZABLE;
 ```
 
 #### 4. Lost Updates
@@ -195,14 +206,19 @@ SET TRANSACTION ISOLATION LEVEL SERIALIZABLE;
 
 ```sql
 -- Transaction 1
-BEGIN;
+SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED;
+START TRANSACTION;
 SELECT balance FROM accounts WHERE account_id = 1; -- Read
+
 -- Transaction 2
-BEGIN;
+SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED;
+START TRANSACTION;
 SELECT balance FROM accounts WHERE account_id = 1; -- Read
+
 -- Transaction 1
 UPDATE accounts SET balance = balance + 100 WHERE account_id = 1;
 COMMIT;
+
 -- Transaction 2
 UPDATE accounts SET balance = balance + 200 WHERE account_id = 1;
 COMMIT;
@@ -214,9 +230,11 @@ In this example, both transactions read the same balance, but the second transac
 
 ```sql
 -- Using Explicit Locks
-BEGIN;
+SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
+START TRANSACTION;
 SELECT balance FROM accounts WHERE account_id = 1 FOR UPDATE;
 -- Perform update
+UPDATE accounts SET balance = balance + 100 WHERE account_id = 1;
 COMMIT;
 ```
 
@@ -228,4 +246,3 @@ COMMIT;
 4. **SERIALIZABLE**: Prevents dirty reads, non-repeatable reads, and phantom reads.
 
 These isolation levels ensure the consistency and integrity of data in concurrent transactions.
-
