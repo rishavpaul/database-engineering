@@ -238,11 +238,51 @@ UPDATE accounts SET balance = balance + 100 WHERE account_id = 1;
 COMMIT;
 ```
 
-### Summary of Isolation Levels
+## Summary of Isolation Levels
 
-1. **READ UNCOMMITTED**: Allows dirty reads.
-2. **READ COMMITTED**: Prevents dirty reads but allows non-repeatable reads and phantom reads.
-3. **REPEATABLE READ**: Prevents dirty reads and non-repeatable reads but allows phantom reads.
-4. **SERIALIZABLE**: Prevents dirty reads, non-repeatable reads, and phantom reads.
 
-These isolation levels ensure the consistency and integrity of data in concurrent transactions.
+### Isolation Levels in Database Transactions (MySQL Format)
+
+| Isolation Level   | Allows Dirty Reads | Allows Non-repeatable Reads | Allows Phantom Reads | Allows Lost Updates | Usage Scenarios                                               |
+|-------------------|---------------------|-----------------------------|----------------------|---------------------|----------------------------------------------------------------|
+| READ UNCOMMITTED  | Yes                 | Yes                         | Yes                  | Yes                 | **Can Be Used:** Quick, non-critical analytics where exact consistency is not important. **Cannot Be Used:** Financial transactions, inventory management, and other critical applications where data integrity is crucial. |
+| READ COMMITTED    | No                  | Yes                         | Yes                  | Yes                 | **Can Be Used:** General business operations where some inconsistency is tolerable, e.g., order processing. **Cannot Be Used:** Scenarios requiring consistent reads, like reporting and analytics. |
+| REPEATABLE READ   | No                  | No                          | Yes                  | No                  | **Can Be Used:** Scenarios requiring consistent reads of data, e.g., financial reporting, balance checks. **Cannot Be Used:** Environments with high concurrency and performance sensitivity, due to potential blocking. |
+| SERIALIZABLE      | No                  | No                          | No                   | No                  | **Can Be Used:** Highly critical transactions where absolute consistency is required, e.g., bank transfers, reservation systems. **Cannot Be Used:** High-performance systems where concurrency and speed are prioritized over strict consistency. |
+
+### Phenomena Allowed by Isolation Levels
+
+| Phenomenon            | READ UNCOMMITTED | READ COMMITTED | REPEATABLE READ | SERIALIZABLE |
+|-----------------------|------------------|----------------|-----------------|--------------|
+| Dirty Read            | Yes              | No             | No              | No           |
+| Non-repeatable Read   | Yes              | Yes            | No              | No           |
+| Phantom Read          | Yes              | Yes            | Yes             | No           |
+| Lost Updates          | Yes              | Yes            | No              | No           |
+
+### Detailed Examples
+
+#### READ UNCOMMITTED
+
+- **Allows:** Dirty Reads, Non-repeatable Reads, Phantom Reads, Lost Updates
+- **Example Use Case:** Quick, non-critical queries for internal metrics or logging where the exact data consistency is not important.
+- **Not Suitable For:** Financial applications, inventory systems, or any system where data integrity and accuracy are critical.
+
+#### READ COMMITTED
+
+- **Allows:** Non-repeatable Reads, Phantom Reads, Lost Updates
+- **Prevents:** Dirty Reads
+- **Example Use Case:** Order processing systems where it is acceptable if the data read may be modified before the transaction completes.
+- **Not Suitable For:** Reporting systems where repeatable read consistency is required.
+
+#### REPEATABLE READ
+
+- **Allows:** Phantom Reads
+- **Prevents:** Dirty Reads, Non-repeatable Reads, Lost Updates
+- **Example Use Case:** Financial reporting systems, banking balance checks where consistency is crucial but some phantom reads are acceptable.
+- **Not Suitable For:** Highly concurrent systems where the performance impact of locks could be a problem.
+
+#### SERIALIZABLE
+
+- **Prevents:** Dirty Reads, Non-repeatable Reads, Phantom Reads, Lost Updates
+- **Example Use Case:** Bank transfers, reservation systems, where the highest level of consistency is necessary.
+- **Not Suitable For:** Systems requiring high performance and concurrency due to the strict locking and reduced concurrency.
