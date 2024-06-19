@@ -36,7 +36,7 @@ A database transaction is a sequence of one or more SQL operations executed as a
    - **Rollback**: Reverts all changes made during the transaction, restoring the database to its previous state.
      - SQL: `ROLLBACK;`.
 
-### Example
+#### Example
 
 Here’s a simple example of a database transaction that transfers money from one account to another:
 
@@ -57,7 +57,7 @@ COMMIT;
 ROLLBACK;
 ```
 
-### Explanation
+#### Explanation
 
 - `START TRANSACTION;`: Begins a new transaction.
 - `UPDATE accounts SET balance = balance - 100 WHERE account_id = 1;`: Decreases the balance of the sender’s account.
@@ -67,7 +67,7 @@ ROLLBACK;
 
 In this example, the transaction ensures that either both account balances are updated, or neither is, preserving the consistency and integrity of the database.
 
-### What is Atomicity?
+## What is Atomicity?
 
 Atomicity is one of the four ACID properties of database transactions, which ensure that database operations are processed reliably. Atomicity specifically guarantees that a series of database operations within a transaction are treated as a single "atomic" unit. This means that either all operations within the transaction are completed successfully, or none of them are applied to the database. There are no partial transactions.
 
@@ -88,7 +88,7 @@ When a SQL server crashes in the middle of a transaction, atomicity ensures that
    - **Redo Phase**: The server will redo any committed transactions that were not fully written to the database before the crash. This ensures that all committed changes are applied.
    - **Undo Phase**: The server will undo any transactions that were not committed before the crash. This removes any partial changes, maintaining the atomicity and consistency of the database.
 
-### Example Scenario
+#### Example Scenario
 
 Consider a transaction that transfers money from Account A to Account B:
 
@@ -111,9 +111,9 @@ If the server crashes after the first `UPDATE` but before the `COMMIT`, the data
 In summary, atomicity ensures that even in the event of a crash, the database can recover to a consistent state by rolling back any incomplete transactions. This guarantees that no partial transactions are left in the database, preserving the all-or-nothing nature of transactions.
 
 
-### Read Phenomenons in Database Transactions
+## Read Phenomenons in Database Transactions
 
-#### 1. Dirty Read
+### 1. Dirty Read
 **Definition:** A dirty read occurs when a transaction reads data that has been written by another transaction but not yet committed. If the other transaction is rolled back, the data read by the first transaction becomes invalid.
 
 **Example:**
@@ -141,7 +141,7 @@ In this example, Transaction 2 reads the balance that Transaction 1 has updated 
 SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED;
 ```
 
-#### 2. Non-repeatable Read
+### 2. Non-repeatable Read
 **Definition:** A non-repeatable read occurs when a transaction reads the same row twice and gets different values because another transaction has modified and committed the data in between the two reads.
 
 **Example:**
@@ -170,7 +170,7 @@ In this example, Transaction 1 reads the balance twice, but between the two read
 SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
 ```
 
-#### 3. Phantom Reads
+### 3. Phantom Reads
 **Definition:** A phantom read occurs when a transaction reads a set of rows that satisfy a condition, but another transaction inserts or deletes rows that satisfy the same condition before the first transaction is complete.
 
 **Example:**
@@ -199,7 +199,7 @@ In this example, Transaction 1 reads the count of accounts with a balance greate
 SET SESSION TRANSACTION ISOLATION LEVEL SERIALIZABLE;
 ```
 
-#### 4. Lost Updates
+### 4. Lost Updates
 **Definition:** A lost update occurs when two transactions both read the same data and then update it based on the value read. The second update overwrites the first update without knowing about the changes made by the first transaction.
 
 **Example:**
