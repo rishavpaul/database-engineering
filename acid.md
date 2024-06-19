@@ -109,3 +109,123 @@ If the server crashes after the first `UPDATE` but before the `COMMIT`, the data
 4. The server ensures no partial updates remain, maintaining database integrity.
 
 In summary, atomicity ensures that even in the event of a crash, the database can recover to a consistent state by rolling back any incomplete transactions. This guarantees that no partial transactions are left in the database, preserving the all-or-nothing nature of transactions.
+
+
+### Read Phenomenons in Database Transactions
+
+#### 1. Dirty Read
+**Definition:** A dirty read occurs when a transaction reads data that has been written by another transaction but not yet committed. If the other transaction is rolled back, the data read by the first transaction becomes invalid.
+
+**Example:**
+
+```sql
+-- Transaction 1
+BEGIN;
+UPDATE accounts SET balance = balance - 100 WHERE account_id = 1;
+-- Transaction 2
+SELECT balance FROM accounts WHERE account_id = 1; -- Dirty Read
+-- Transaction 1
+ROLLBACK;
+```
+
+In this example, Transaction 2 reads the balance that Transaction 1 has updated but not yet committed. If Transaction 1 rolls back, Transaction 2's read becomes invalid.
+
+**Prevention:** Set the isolation level to `READ COMMITTED`.
+
+```sql
+SET TRANSACTION ISOLATION LEVEL READ COMMITTED;
+```
+
+#### 2. Non-repeatable Read
+**Definition:** A non-repeatable read occurs when a transaction reads the same row twice and gets different values because another transaction has modified and committed the data in between the two reads.
+
+**Example:**
+
+```sql
+-- Transaction 1
+BEGIN;
+SELECT balance FROM accounts WHERE account_id = 1; -- Read 1
+-- Transaction 2
+BEGIN;
+UPDATE accounts SET balance = balance + 100 WHERE account_id = 1;
+COMMIT;
+-- Transaction 1
+SELECT balance FROM accounts WHERE account_id = 1; -- Read 2
+COMMIT;
+```
+
+In this example, Transaction 1 reads the balance twice, but between the two reads, Transaction 2 updates and commits the balance.
+
+**Prevention:** Set the isolation level to `REPEATABLE READ`.
+
+```sql
+SET TRANSACTION ISOLATION LEVEL REPEATABLE READ;
+```
+
+#### 3. Phantom Reads
+**Definition:** A phantom read occurs when a transaction reads a set of rows that satisfy a condition, but another transaction inserts or deletes rows that satisfy the same condition before the first transaction is complete.
+
+**Example:**
+
+```sql
+-- Transaction 1
+BEGIN;
+SELECT COUNT(*) FROM accounts WHERE balance > 1000; -- Read 1
+-- Transaction 2
+BEGIN;
+INSERT INTO accounts (account_id, balance) VALUES (5, 1500);
+COMMIT;
+-- Transaction 1
+SELECT COUNT(*) FROM accounts WHERE balance > 1000; -- Read 2
+COMMIT;
+```
+
+In this example, Transaction 1 reads the count of accounts with a balance greater than 1000 twice. Between the two reads, Transaction 2 inserts a new account that satisfies the condition.
+
+**Prevention:** Set the isolation level to `SERIALIZABLE`.
+
+```sql
+SET TRANSACTION ISOLATION LEVEL SERIALIZABLE;
+```
+
+#### 4. Lost Updates
+**Definition:** A lost update occurs when two transactions both read the same data and then update it based on the value read. The second update overwrites the first update without knowing about the changes made by the first transaction.
+
+**Example:**
+
+```sql
+-- Transaction 1
+BEGIN;
+SELECT balance FROM accounts WHERE account_id = 1; -- Read
+-- Transaction 2
+BEGIN;
+SELECT balance FROM accounts WHERE account_id = 1; -- Read
+-- Transaction 1
+UPDATE accounts SET balance = balance + 100 WHERE account_id = 1;
+COMMIT;
+-- Transaction 2
+UPDATE accounts SET balance = balance + 200 WHERE account_id = 1;
+COMMIT;
+```
+
+In this example, both transactions read the same balance, but the second transaction's update overwrites the first transaction's update.
+
+**Prevention:** Use locking mechanisms or higher isolation levels.
+
+```sql
+-- Using Explicit Locks
+BEGIN;
+SELECT balance FROM accounts WHERE account_id = 1 FOR UPDATE;
+-- Perform update
+COMMIT;
+```
+
+### Summary of Isolation Levels
+
+1. **READ UNCOMMITTED**: Allows dirty reads.
+2. **READ COMMITTED**: Prevents dirty reads but allows non-repeatable reads and phantom reads.
+3. **REPEATABLE READ**: Prevents dirty reads and non-repeatable reads but allows phantom reads.
+4. **SERIALIZABLE**: Prevents dirty reads, non-repeatable reads, and phantom reads.
+
+These isolation levels ensure the consistency and integrity of data in concurrent transactions.
+
