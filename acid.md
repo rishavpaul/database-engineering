@@ -144,8 +144,6 @@ In the context of database transaction isolation levels, the terms Serializable,
 - **Implementation:** Uses locks on rows during read and write operations but releases them immediately after the operation is done.
 - **Use Case:** Commonly used in applications where performance is a concern and some degree of data inconsistency is acceptable.
 
-Certainly! Let's discuss the Read Uncommitted and Snapshot Isolation levels:
-
 ### 5. Read Uncommitted Isolation Level
 - **Lowest level of isolation**.
 - Transactions are allowed to read uncommitted changes made by other transactions.
