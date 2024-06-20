@@ -161,3 +161,68 @@ In the context of database transaction isolation levels, the terms Serializable,
 
 Understanding these isolation levels helps in choosing the right one based on the specific needs for data consistency and system performance in your application.
 
+### Serializable and Snapshot Isolation Levels
+
+#### Serializable Isolation Level
+
+**Definition:**
+Serializable isolation is the strictest level of isolation in database systems. It ensures that transactions are completely isolated from each other, making them appear as if they were executed sequentially, one after the other.
+
+**Characteristics:**
+- **Prevents Anomalies**: Serializable isolation prevents dirty reads, non-repeatable reads, and phantom reads.
+- **Locking**: It typically involves locking the rows or ranges of rows read or written by a transaction, which can significantly limit concurrency.
+- **Use Case**: This level is ideal when absolute consistency is required and concurrent access to the database is minimal.
+- **Performance**: Due to extensive locking, it can lead to significant contention and reduced performance in high-concurrency environments.
+
+#### Snapshot Isolation Level
+
+**Definition:**
+Snapshot isolation is a less strict level of isolation compared to Serializable. It provides each transaction with a consistent snapshot of the database at a specific point in time using a mechanism called Multi-Version Concurrency Control (MVCC).
+
+**Characteristics:**
+- **Prevents Dirty and Non-Repeatable Reads**: Snapshot isolation prevents dirty reads and non-repeatable reads by providing a consistent snapshot of the data.
+- **Concurrency**: It allows higher concurrency than Serializable because it avoids locking rows for read operations.
+- **Write Skew Anomalies**: While it offers good consistency, it can still suffer from write skew anomalies, where concurrent transactions make non-conflicting updates based on the same initial data, leading to an inconsistent final state.
+- **Conflict Detection**: It detects write conflicts at commit time, rolling back one of the conflicting transactions if necessary.
+
+
+#### Key Differences
+
+- **Concurrency**:
+  - **Serializable**: Low concurrency due to extensive locking.
+  - **Snapshot**: Higher concurrency due to MVCC and fewer locks.
+  
+- **Consistency**:
+  - **Serializable**: Guarantees complete serializability and consistency.
+  - **Snapshot**: Provides a consistent view of data but may suffer from write skew anomalies.
+  
+- **Performance**:
+  - **Serializable**: Can cause significant contention and performance issues under high load.
+  - **Snapshot**: Generally better performance due to reduced locking but can be impacted by conflict detection and resolution.
+
+#### Write Skew Anomaly Example
+
+**Scenario:**
+In a hospital management system, two doctors (Alice and Bob) must ensure at least two doctors are always on call. Both decide to go off call concurrently, leading to a state where no doctors are on call, which is inconsistent with the rules.
+
+**Prevention Using Serializable Isolation:**
+```sql
+SET SESSION TRANSACTION ISOLATION LEVEL SERIALIZABLE;
+
+-- Transaction A
+START TRANSACTION;
+SELECT COUNT(*) FROM on_call WHERE doctor_id IN (1, 2) FOR UPDATE; -- Locks the rows
+DELETE FROM on_call WHERE doctor_id = 1;
+COMMIT;
+
+-- Transaction B
+START TRANSACTION;
+SELECT COUNT(*) FROM on_call WHERE doctor_id IN (1, 2) FOR UPDATE; -- Locks the rows
+DELETE FROM on_call WHERE doctor_id = 2;
+COMMIT;
+```
+Using Serializable isolation, one transaction will wait for the other to complete, ensuring that both see the most current data and preventing the write skew anomaly.
+
+### Conclusion
+
+Choosing between Serializable and Snapshot isolation levels depends on the application's requirements for consistency and performance. Serializable isolation ensures the highest level of consistency but can severely limit concurrency and performance. Snapshot isolation offers a good balance between consistency and performance, making it suitable for many applications that require high concurrency while maintaining a consistent view of the data.
