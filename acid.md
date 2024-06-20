@@ -115,4 +115,51 @@ In summary, atomicity ensures that even in the event of a crash, the database ca
 
 https://en.wikipedia.org/wiki/Isolation_(database_systems)
 
+In the context of database transaction isolation levels, the terms Serializable, Repeatable Read, and Read Committed refer to different levels of isolation that control the visibility of data changes made by other transactions during the execution of a transaction. Here's a breakdown of each:
+
+### 1. Serializable Isolation Level
+- **Highest level of isolation**.
+- Transactions are executed in such a way that the end result is as if they were executed one after the other, sequentially.
+- **Prevents:** Dirty reads, non-repeatable reads, and phantom reads.
+- **Implementation:** Typically implemented using locking mechanisms that prevent other transactions from accessing the rows being read or written.
+- **Use Case:** Critical applications where data consistency is paramount and the cost of reduced concurrency is acceptable.
+
+### 2. Snapshot Isolation Level
+- Provides a consistent view of the database as it was at the start of the transaction.
+- **Prevents:** Dirty reads, non-repeatable reads, and phantom reads within the context of the snapshot.
+- **Implementation:** Uses a versioning mechanism, where each transaction sees a snapshot of the database at a point in time.
+- **Use Case:** Scenarios where consistent reads are required without locking, allowing higher concurrency compared to Serializable isolation.
+
+### 3. Repeatable Read Isolation Level
+- Ensures that if a transaction reads a row, subsequent reads of that row will return the same data, even if other transactions modify it.
+- **Prevents:** Dirty reads and non-repeatable reads.
+- **Does not prevent:** Phantom reads. (Phantom reads occur when a transaction reads a set of rows that satisfy a condition, but another transaction inserts or deletes rows that satisfy the same condition before the initial transaction completes.)
+- **Implementation:** Uses locks on rows that are read and written, but allows new rows to be inserted that match the query conditions.
+- **Use Case:** Scenarios where repeatable reads are necessary, but the application can tolerate phantom reads.
+
+### 4. Read Committed Isolation Level
+- Ensures that any data read is committed at the moment it is read. Thus, it prevents dirty reads (i.e., reading uncommitted changes from other transactions).
+- **Prevents:** Dirty reads.
+- **Does not prevent:** Non-repeatable reads and phantom reads.
+- **Implementation:** Uses locks on rows during read and write operations but releases them immediately after the operation is done.
+- **Use Case:** Commonly used in applications where performance is a concern and some degree of data inconsistency is acceptable.
+
+Certainly! Let's discuss the Read Uncommitted and Snapshot Isolation levels:
+
+### 5. Read Uncommitted Isolation Level
+- **Lowest level of isolation**.
+- Transactions are allowed to read uncommitted changes made by other transactions.
+- **Allows:** Dirty reads, non-repeatable reads, and phantom reads.
+- **Use Case:** Scenarios where maximum performance is needed, and data consistency is not critical. This is rarely used due to the risk of reading uncommitted, potentially inconsistent data.
+
+
+| Isolation Level      | Prevents Dirty Reads | Prevents Non-Repeatable Reads | Prevents Phantom Reads | Concurrency | Use Case                                           |
+|----------------------|----------------------|------------------------------|------------------------|-------------|----------------------------------------------------|
+| Serializable         | Yes                  | Yes                          | Yes                    | Low         | Critical applications requiring strict consistency |
+| Repeatable Read      | Yes                  | Yes                          | No                     | Medium      | Scenarios needing repeatable reads, tolerating phantom reads |
+| Read Committed       | Yes                  | No                           | No                     | High        | Commonly used where performance is key, some inconsistency acceptable |
+| Read Uncommitted     | No                   | No                           | No                     | Very High   | Scenarios where performance is critical, and data consistency is not important |
+| Snapshot Isolation   | Yes                  | Yes                          | Yes (within the snapshot) | High    | Scenarios requiring consistent reads without locking, allowing high concurrency |
+
+Understanding these isolation levels helps in choosing the right one based on the specific needs for data consistency and system performance in your application.
 
